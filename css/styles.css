@@ -46,6 +46,7 @@
 }
 
 .game-button p {
+  cursor: pointer;
   font-size: 2em;
   top: 20%;
   position: absolute;
