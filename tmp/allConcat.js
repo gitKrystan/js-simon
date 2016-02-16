@@ -17,6 +17,7 @@ $(function() {
 
   function runOneTurn() {
     var turnCount = currentGame.incrementTurnCount();
+    $('#start-game p').text(turnCount);
     $('.simon-cell').unbind('click');
     updateAndDisplaySequence();
     scheduleTurnForGame(turnCount);
