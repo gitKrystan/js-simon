@@ -1,5 +1,6 @@
-var Game = require('./../js/simon.js').Game;
-var TIMEPERFLASH = 800;
+var Game = require('./../js/simon.js');
+var TIME_BETWEEN_FLASHES = 800;
+var FLASH_DURATION = 100;
 
 $(function() {
   var currentGame;
@@ -8,24 +9,38 @@ $(function() {
     currentGame = startNewGame();
   });
 
-  function runOneTurn(game) {
-    var turnCount = game.incrementTurnCount();
-    updateAndDisplaySequence(game);
-    setTimeout(userTurn, turnCount * TIMEPERFLASH, game);
+  function startNewGame() {
+    currentGame = new Game();
+    runOneTurn();
+    return currentGame;
   }
 
-  function updateAndDisplaySequence(game) {
-    game.updateSequence();
-    var sequence = game.getSequence();
+  function runOneTurn() {
+    var turnCount = currentGame.incrementTurnCount();
+    $('.simon-cell').unbind('click');
+    updateAndDisplaySequence();
+    scheduleTurnForGame(turnCount);
+  }
+
+  function updateAndDisplaySequence() {
+    var sequence = currentGame.updateSequence();
+
     var colorIndex = 0;
     setInterval(function() {
-      var $chosenCell = $('div#' + sequence[colorIndex]);
-      flashChosenCell($chosenCell);
+      chooseAndFlashCell(sequence[colorIndex]);
       colorIndex++;
       if (colorIndex === sequence.length - 1) {
         return false;
       }
-    }, TIMEPERFLASH);
+    }, TIME_BETWEEN_FLASHES);
+  }
+
+  function scheduleTurnForGame(turnCount) {
+    setTimeout(userTurn, turnCount * TIME_BETWEEN_FLASHES);
+  }
+
+  function userTurn() {
+    $('.simon-cell').click(onUserClick);
   }
 
   function flashChosenCell(target) {
@@ -35,35 +50,42 @@ $(function() {
         $(this).removeClass('flash');
     }).bind(target);
 
-    setTimeout(removeFlashClassFromClickedCell, 100);
+    setTimeout(removeFlashClassFromClickedCell, FLASH_DURATION);
   }
 
-  function userTurn(game) {
-    $('.simon-cell').click(function() {
-      var $chosenCell = $(this);
-      flashChosenCell($chosenCell);
-
-      var cellID = this.id;
-      game.updateUserGuesses(cellID);
-
-      if (!game.guessMatchesSequence()) {
-        newGameResponse = window.confirm('Game Over! You survived ' + (game.getTurnCount() - 1) +
-          ' turns. Start a new game?');
-        if (newGameResponse) {
-          currentGame = startNewGame(game);
-        }
-      } else if (game.getUserGuesses().length === game.getTurnCount()) {
-        $('.simon-cell').unbind('click');
-        game.resetUserGuesses();
-        runOneTurn(currentGame);
-      }
-    });
+  function chooseAndFlashCell(target) {
+    var $chosenCell = $('div#' + target);
+    flashChosenCell($chosenCell);
   }
 
-  function startNewGame(game) {
-    var currentGame = new Game();
-    $('.simon-cell').unbind('click');
-    runOneTurn(currentGame);
-    return currentGame;
+  function onUserClick() {
+    var $chosenCell = $(this);
+    flashChosenCell($chosenCell);
+
+    var cellID = this.id;
+    currentGame.updateUserGuesses(cellID);
+
+    if (currentGame.guessIsWrong()) {
+      gameOver();
+    } else if (currentGame.turnCompleted()) {
+      startNextTurn();
+    }
+  }
+
+  function gameOver() {
+    newGameResponse = window.confirm('Game Over! You survived ' +
+      (currentGame.getTurnCount() - 1) + ' turns. Start a new game?');
+    if (newGameResponse) {
+      waitBefore(startNewGame);
+    }
+  }
+
+  function startNextTurn() {
+    currentGame.resetUserGuesses();
+    waitBefore(runOneTurn);
+  }
+
+  function waitBefore(callback) {
+    setTimeout(callback, TIME_BETWEEN_FLASHES);
   }
 });

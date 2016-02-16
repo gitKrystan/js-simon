@@ -45,6 +45,14 @@ Game.prototype.guessMatchesSequence = function () {
   return true;
 };
 
+Game.prototype.guessIsWrong = function () {
+  return !this.guessMatchesSequence();
+};
+
+Game.prototype.turnCompleted = function () {
+  return this.getUserGuesses().length === this.getTurnCount();
+};
+
 Game.prototype.getTurnCount = function () {
   return this.turnCount;
 };
@@ -54,4 +62,4 @@ Game.prototype.incrementTurnCount = function () {
   return this.turnCount;
 };
 
-exports.Game = Game;
+module.exports = Game;
